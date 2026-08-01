@@ -35,7 +35,7 @@ services:
           memory: 32M
     labels:
       - docktail.service.enable=true
-      - docktail.service.name=vault
+      - docktail.service.name=vaultwarden
       - docktail.service.port=80
       - docktail.service.service-protocol=https
       - docktail.service.description=Password Manager

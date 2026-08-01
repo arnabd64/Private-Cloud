@@ -1,0 +1,88 @@
+networks:
+  public:
+    external: true
+
+volumes:
+  data:
+
+services:
+  pocket-id:
+    image: ghcr.io/pocket-id/pocket-id:v2
+    container_name: pocket-id
+    restart: unless-stopped
+    networks:
+      - public
+    expose:
+      - "1411"
+    volumes:
+      - data:/app/data
+    environment:
+      - TZ=Asia/Kolkata
+      - PGID=1000
+      - PUID=1000
+      - TRUST_PROXY=true
+      - LOG_LEVEL=warn
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - APP_URL=${APP_URL}
+    healthcheck:
+      test: ["CMD", "/app/pocket-id", "healthcheck"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+    labels:
+      - docktail.service.enable=true
+      - docktail.service.name=id
+      - docktail.service.port=1411
+      - docktail.service.service-protocol=https
+      - docktail.service.description=SSO Provider
+      - docker-volume-backup.stop-during-backup=true
+
+  local-backup:
+    image: offen/docker-volume-backup:latest
+    restart: unless-stopped
+    networks:
+      - public
+    environment:
+      - TZ=Asia/Kolkata
+      - BACKUP_CRON_EXPRESSION=0 0 3 * * *
+      - BACKUP_RETENTION_DAYS=15
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - data:/backup/pocket-id:ro
+      - ${LOCAL_BACKUP_DESTINATION}:/archive
+    depends_on:
+      pocket-id:
+        condition: service_healthy  
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+
+  r2-backup:
+    image: offen/docker-volume-backup:latest
+    restart: unless-stopped
+    networks:
+      - public
+    environment:
+      - TZ=Asia/Kolkata
+      - BACKUP_CRON_EXPRESSION=0 0 3 * * 0
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_ENDPOINT=${AWS_ENDPOINT}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - data:/backup/pocket-id:ro
+    depends_on:
+      pocket-id:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+
