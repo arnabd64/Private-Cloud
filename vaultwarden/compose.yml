@@ -1,0 +1,42 @@
+networks:
+  public:
+    external: true
+
+volumes:
+  data:
+
+services:
+  vault:
+    image: ghcr.io/dani-garcia/vaultwarden:1.37.1-alpine
+    container_name: vaultwarden
+    restart: unless-stopped
+    networks:
+      - public
+    expose:
+      - 80
+    volumes:
+      - data:/data
+    environment:
+      - TZ=Asia/Kolkata
+      - DOMAIN=${DOMAIN}
+      - LOG_LEVEL=info
+      - SIGNUPS_ALLOWED=true
+      - INVITATIONS_ALLOWED=false
+      - SHOW_PASSWORD_HINT=false
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/alive"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+    labels:
+      - docktail.service.enable=true
+      - docktail.service.name=vault
+      - docktail.service.port=80
+      - docktail.service.service-protocol=https
+      - docktail.service.description=Password Manager
+
