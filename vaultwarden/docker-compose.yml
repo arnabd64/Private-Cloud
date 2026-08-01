@@ -1,0 +1,88 @@
+networks:
+  public:
+    external: true
+
+volumes:
+  data:
+
+services:
+  vault:
+    image: ghcr.io/dani-garcia/vaultwarden:1.37.1-alpine
+    container_name: vaultwarden
+    restart: unless-stopped
+    networks:
+      - public
+    expose:
+      - 80
+    volumes:
+      - data:/data
+    environment:
+      - TZ=Asia/Kolkata
+      - DOMAIN=${DOMAIN}
+      - LOG_LEVEL=info
+      - SIGNUPS_ALLOWED=true
+      - INVITATIONS_ALLOWED=false
+      - SHOW_PASSWORD_HINT=false
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/alive"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+    labels:
+      - docktail.service.enable=true
+      - docktail.service.name=vault
+      - docktail.service.port=80
+      - docktail.service.service-protocol=https
+      - docktail.service.description=Password Manager
+      - docker-volume-backup.stop-during-backup=true
+
+  local-backup:
+    image: offen/docker-volume-backup:latest
+    restart: unless-stopped
+    networks:
+      - public
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - data:/backup/vaultwarden:ro
+      - ${LOCAL_BACKUP_DESTINATION}:/archive
+    environment:
+      - TZ=Asia/Kolkata
+      - BACKUP_CRON_EXPRESSION=0 0 3 * * *
+      - BACKUP_RETENTION_DAYS=15
+    depends_on:
+      vault:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+
+  r2-backup:
+    image: offen/docker-volume-backup:latest
+    restart: unless-stopped
+    networks:
+      - public
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - data:/backup/vaultwarden:ro
+    environment:
+      - TZ=Asia/Kolkata
+      - BACKUP_CRON_EXPRESSION=0 0 3 * * 0
+      - BACKUP_RETENTION_DAYS=182
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_ENDPOINT=${AWS_ENDPOINT}
+    depends_on:
+      vault:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+
