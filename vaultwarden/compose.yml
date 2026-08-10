@@ -12,17 +12,23 @@ services:
     restart: unless-stopped
     networks:
       - public
-    expose:
-      - 80
+    ports:
+      - 127.0.0.1:8080:80
     volumes:
       - data:/data
     environment:
       - TZ=Asia/Kolkata
       - DOMAIN=${DOMAIN}
       - LOG_LEVEL=info
-      - SIGNUPS_ALLOWED=true
-      - INVITATIONS_ALLOWED=false
       - SHOW_PASSWORD_HINT=false
+      - SSO_ENABLED=true
+      - SSO_ONLY=false
+      - SSO_SIGNUPS_MATCH_EMAIL=true
+      - SSO_ALLOW_UNKNOWN_EMAIL_VERIFICATION=true
+      - SSO_SCOPES=email profile groups offline_access
+      - SSO_CLIENT_ID=${SSO_CLIENT_ID}
+      - SSO_CLIENT_SECRET=${SSO_CLIENT_SECRET}
+      - SSO_AUTHORITY=${SSO_AUTHORITY}
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/alive"]
       interval: 5m
@@ -33,13 +39,6 @@ services:
       resources:
         limits:
           memory: 32M
-    labels:
-      - docktail.service.enable=true
-      - docktail.service.name=vaultwarden
-      - docktail.service.port=80
-      - docktail.service.service-protocol=https
-      - docktail.service.description=Password Manager
-      - docker-volume-backup.stop-during-backup=true
 
   local-backup:
     image: offen/docker-volume-backup:latest

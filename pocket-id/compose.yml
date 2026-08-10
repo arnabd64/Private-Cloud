@@ -12,8 +12,8 @@ services:
     restart: unless-stopped
     networks:
       - public
-    expose:
-      - "1411"
+    ports:
+      - 127.0.0.1:1411:1411
     volumes:
       - data:/app/data
     environment:
@@ -34,13 +34,6 @@ services:
       resources:
         limits:
           memory: 32M
-    labels:
-      - docktail.service.enable=true
-      - docktail.service.name=id
-      - docktail.service.port=1411
-      - docktail.service.service-protocol=https
-      - docktail.service.description=SSO Provider
-      - docker-volume-backup.stop-during-backup=true
 
   local-backup:
     image: offen/docker-volume-backup:latest
