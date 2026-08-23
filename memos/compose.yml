@@ -1,0 +1,55 @@
+networks:
+  public:
+    external: true
+
+volumes:
+  data:
+
+services:
+  memos:
+    image: neosmemo/memos:stable
+    container_name: memo
+    restart: unless-stopped
+    networks:
+      - public
+    ports:
+      - 127.0.0.1:5230:5230
+    volumes:
+      - data:/var/opt/memos
+    environment:
+      - TZ=Asia/Kolkata
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5230/healthz"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+
+  r2-backup:
+    image: offen/docker-volume-backup:latest
+    restart: unless-stopped
+    networks:
+      - public
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - data:/backup/memos:ro
+    environment:
+      - TZ=Asia/Kolkata
+      - BACKUP_CRON_EXPRESSION=0 0 3 * * 0
+      - BACKUP_RETENTION_DAYS=182
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_ENDPOINT=${AWS_ENDPOINT}
+    depends_on:
+      memos:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+
