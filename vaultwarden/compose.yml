@@ -18,6 +18,7 @@ services:
       - data:/data
     environment:
       - TZ=Asia/Kolkata
+      - SIGNUPS_ALLOWED=false
       - DOMAIN=${DOMAIN}
       - LOG_LEVEL=info
       - SHOW_PASSWORD_HINT=false
@@ -39,6 +40,8 @@ services:
       resources:
         limits:
           memory: 32M
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   backup:
     image: offen/docker-volume-backup:latest
@@ -52,6 +55,7 @@ services:
       - TZ=Asia/Kolkata
       - BACKUP_CRON_EXPRESSION=0 30 23 * * 2
       - BACKUP_RETENTION_DAYS=365
+      - BACKUP_FILENAME=vaultwarden-%Y-%m-%dT%H-%M-%S.tar.gz
       - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}

@@ -28,19 +28,22 @@ services:
       resources:
         limits:
           memory: 32M
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
-  r2-backup:
+  backup:
     image: offen/docker-volume-backup:latest
     restart: unless-stopped
-    networks:
-      - public
+    network_mode: host
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - data:/backup/memos:ro
+      - data:/backup:ro
+      - ${LOCAL_BACKUP_DESTINATION}:/archive  
     environment:
       - TZ=Asia/Kolkata
-      - BACKUP_CRON_EXPRESSION=0 0 3 * * 0
-      - BACKUP_RETENTION_DAYS=182
+      - BACKUP_CRON_EXPRESSION=0 30 23 * * 3
+      - BACKUP_RETENTION_DAYS=365
+      - BACKUP_FILENAME=memos-%Y-%m-%dT%H-%M-%S.tar.gz
       - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}

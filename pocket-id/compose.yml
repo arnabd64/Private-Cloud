@@ -34,6 +34,8 @@ services:
       resources:
         limits:
           memory: 32M
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   backup:
     image: offen/docker-volume-backup:latest
@@ -41,7 +43,7 @@ services:
     network_mode: host
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - data:/backup/pocket-id:ro
+      - data:/backup:ro
       - ${LOCAL_BACKUP_DESTINATION}:/archive
     environment:
       - TZ=Asia/Kolkata
