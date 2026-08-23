@@ -35,42 +35,23 @@ services:
         limits:
           memory: 32M
 
-  local-backup:
+  backup:
     image: offen/docker-volume-backup:latest
     restart: unless-stopped
-    networks:
-      - public
-    environment:
-      - TZ=Asia/Kolkata
-      - BACKUP_CRON_EXPRESSION=0 0 3 * * *
-      - BACKUP_RETENTION_DAYS=15
+    network_mode: host
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - data:/backup/pocket-id:ro
       - ${LOCAL_BACKUP_DESTINATION}:/archive
-    depends_on:
-      pocket-id:
-        condition: service_healthy  
-    deploy:
-      resources:
-        limits:
-          memory: 32M
-
-  r2-backup:
-    image: offen/docker-volume-backup:latest
-    restart: unless-stopped
-    networks:
-      - public
     environment:
       - TZ=Asia/Kolkata
-      - BACKUP_CRON_EXPRESSION=0 0 3 * * 0
+      - BACKUP_CRON_EXPRESSION=0 30 23 * * 1
+      - BACKUP_RETENTION_DAYS=365
+      - BACKUP_FILENAME=pocket-id-%Y-%m-%dT%H-%M-%S.tar.gz
       - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_ENDPOINT=${AWS_ENDPOINT}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - data:/backup/pocket-id:ro
     depends_on:
       pocket-id:
         condition: service_healthy
