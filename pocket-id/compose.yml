@@ -47,7 +47,7 @@ services:
       - ${LOCAL_BACKUP_DESTINATION}:/archive
     environment:
       - TZ=Asia/Kolkata
-      - BACKUP_CRON_EXPRESSION=0 30 23 * * 1
+      - BACKUP_CRON_EXPRESSION=30 23 * * 1
       - BACKUP_RETENTION_DAYS=365
       - BACKUP_FILENAME=pocket-id-%Y-%m-%dT%H-%M-%S.tar.gz
       - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}

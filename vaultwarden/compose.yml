@@ -7,7 +7,7 @@ volumes:
 
 services:
   vault:
-    image: ghcr.io/dani-garcia/vaultwarden:1.37.1-alpine
+    image: ghcr.io/dani-garcia/vaultwarden:1.37.2-alpine
     container_name: vaultwarden
     restart: unless-stopped
     networks:
@@ -17,11 +17,22 @@ services:
     volumes:
       - data:/data
     environment:
-      - TZ=Asia/Kolkata
-      - SIGNUPS_ALLOWED=false
+      # Security & IP Handling
+      - IP_HEADER=Cf-Connecting-IP
+      - DISABLE_ADMIN_TOKEN=true
+      - ENABLE_DB_WAL=true
+
+      # Optimizations
+      - WEBSOCKET_ENABLED=true
+      - ICON_REDIRECT=true
+
+      # Account Settings
       - DOMAIN=${DOMAIN}
-      - LOG_LEVEL=info
+      - SIGNUPS_ALLOWED=false
+      - LOG_LEVEL=warn
       - SHOW_PASSWORD_HINT=false
+      
+      # SSO
       - SSO_ENABLED=true
       - SSO_ONLY=false
       - SSO_SIGNUPS_MATCH_EMAIL=true
@@ -46,14 +57,15 @@ services:
   backup:
     image: offen/docker-volume-backup:latest
     restart: unless-stopped
-    network_mode: host
+    networks:
+      - public
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - data:/backup:ro
       - ${LOCAL_BACKUP_DESTINATION}:/archive
     environment:
       - TZ=Asia/Kolkata
-      - BACKUP_CRON_EXPRESSION=0 30 23 * * 2
+      - BACKUP_CRON_EXPRESSION=30 23 * * 2
       - BACKUP_RETENTION_DAYS=365
       - BACKUP_FILENAME=vaultwarden-%Y-%m-%dT%H-%M-%S.tar.gz
       - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
