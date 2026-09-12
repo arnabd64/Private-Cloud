@@ -1,5 +1,5 @@
 networks:
-  public:
+ br-public:
     external: true
 
 volumes:
@@ -11,7 +11,7 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     networks:
-      - public
+      - br-public
     expose:
       - 5432
     volumes:
@@ -22,7 +22,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
-      interval: 60s
+      interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
@@ -32,9 +32,9 @@ services:
     restart: unless-stopped
     container_name: rx-resume
     networks:
-      - public
+      - br-public
     ports:
-      - 127.0.0.1:3000:3000
+      - "[::1]:3000:3000"
     volumes:
       - app_data:/app/data
     environment:

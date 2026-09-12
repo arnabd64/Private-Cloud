@@ -1,5 +1,5 @@
 networks:
-  public:
+  br-public:
     external: true
 
 volumes:
@@ -11,7 +11,7 @@ services:
     container_name: vaultwarden
     restart: unless-stopped
     networks:
-      - public
+      - br-public
     ports:
       - 127.0.0.1:8080:80
     volumes:
@@ -58,7 +58,7 @@ services:
     image: offen/docker-volume-backup:latest
     restart: unless-stopped
     networks:
-      - public
+      - br-public
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - data:/backup:ro
